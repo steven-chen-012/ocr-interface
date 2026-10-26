@@ -1,0 +1,25 @@
+# Minimal deps for running the dots.ocr *pre/post* pipeline on macOS
+# against an OpenAI-compatible HTTP server (LM Studio, vLLM, Ollama, TGI).
+#
+# Install with:
+#   python3 -m venv .venv && source .venv/bin/activate
+#   pip install -r requirements.txt
+#
+# ...or install the whole toolchain as a package (console scripts included):
+#   pip install -e .
+
+# --- inference client ---
+openai>=1.40.0      # OpenAI Python SDK; we use it as an OpenAI-compatible client
+
+# --- PDF → image rendering (PyMuPDF / fitz) ---
+# Use `pymupdf-binary` if plain pymupdf fails to build on your macOS version.
+pymupdf>=1.24.0
+
+# --- image handling ---
+Pillow>=10.0.0
+requests>=2.31      # image_utils.py loads images over http(s)
+
+# --- helpers ---
+tqdm>=4.65.0
+pydantic>=2.0
+numpy>=1.26         # pulled in by doc_utils.py (`import numpy as np`)

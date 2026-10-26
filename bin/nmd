@@ -1,0 +1,52 @@
+#!/bin/bash
+# nmd — 手写笔记 → Markdown 的一行启动器。
+#
+# 不用激活 venv、不用 cd 到项目目录,直接:
+#   ./ocr/bin/nmd ~/Desktop/note.jpg
+#   ./ocr/bin/nmd notes.pdf -o out/
+#
+# 解释器按以下顺序查找,不写死任何绝对路径,也不假设 .venv 一定存在:
+#   1. $OCR_PYTHON / $OCR_VENV_PYTHON —— 显式指定
+#   2. <包目录>/.venv/bin/python        —— ocr/.venv
+#   3. <仓库根>/.venv/bin/python        —— 仓库根的 .venv
+#   4. PATH 上的 python3
+set -euo pipefail
+
+# 本文件所在目录 = <包目录>/bin,上一级 = <包目录>
+BIN_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PKG_DIR="$(cd "$BIN_DIR/.." && pwd)"
+SCRIPT="$PKG_DIR/scripts/note_to_markdown.py"
+
+if [ ! -f "$SCRIPT" ]; then
+  echo "[错误] 找不到 $SCRIPT" >&2
+  exit 1
+fi
+
+# 1) 优先用显式指定的解释器
+PY="${OCR_PYTHON:-${OCR_VENV_PYTHON:-}}"
+if [ -n "$PY" ] && [ ! -x "$PY" ]; then
+  echo "[错误] OCR_PYTHON 指定的解释器不可执行: $PY" >&2
+  exit 1
+fi
+
+# 2) 其次找项目自带的 venv(不假设 .venv 一定存在)
+if [ -z "$PY" ]; then
+  for candidate in "$PKG_DIR/.venv/bin/python" "$PKG_DIR/../.venv/bin/python"; do
+    if [ -x "$candidate" ]; then
+      PY="$candidate"
+      break
+    fi
+  done
+fi
+
+# 3) 最后退回 PATH 上的 python3
+if [ -z "$PY" ]; then
+  if command -v python3 >/dev/null 2>&1; then
+    PY="$(command -v python3)"
+  else
+    echo "[错误] 没找到 Python。请先建 venv 并安装依赖,或设置 \$OCR_PYTHON。" >&2
+    exit 1
+  fi
+fi
+
+exec "$PY" "$SCRIPT" "$@"

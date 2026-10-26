@@ -1,0 +1,71 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ocr"
+version = "0.2.0"
+description = "Mac-friendly dots.ocr / dots.mocr OCR toolchain: PDF → images → layout JSON + Markdown."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [{ name = "chenhaiwen" }]
+keywords = ["ocr", "dots.ocr", "dots.mocr", "layout", "markdown", "macos", "lmstudio"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: MacOS :: MacOS X",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Multimedia :: Graphics :: Graphics Conversion",
+    "Topic :: Text Processing :: Markup :: Markdown",
+]
+
+# Hard deps mirroring requirements.txt, so `pip install -e .` works out of the
+# box on Apple Silicon. Kept in sync manually.
+dependencies = [
+    "openai>=1.40.0",
+    "pymupdf>=1.24.0",
+    "Pillow>=10.0.0",
+    "tqdm>=4.65.0",
+    "pydantic>=2.0",
+    "numpy>=1.26",
+    "requests>=2.31",
+]
+
+[project.urls]
+Homepage = "https://github.com/chenhaiwen/ai"
+Repository = "https://github.com/chenhaiwen/ai"
+Issues = "https://github.com/chenhaiwen/ai/issues"
+
+[project.scripts]
+ocr-shell = "scripts.ocr_shell:main"
+ocr-note-to-markdown = "scripts.note_to_markdown:main"
+ocr-pdf-to-images = "scripts.pdf_to_images:main"
+ocr-check-imports = "scripts.check_imports:main"
+ocr-smoke-test = "scripts.smoke_test:main"
+
+# NOTE ON LAYOUT
+# `pyproject.toml` lives *inside* `ocr/`, so `ocr/` is the distribution root.
+# That makes the shipped packages top-level `dots_mocr` and `scripts` — NOT
+# `ocr.dots_mocr` / `ocr.scripts`. `dots_mocr` is deliberately a flat top-level
+# package because its own modules self-reference absolutely
+# (`from dots_mocr.utils.consts import ...`), so it must not be nested.
+#
+# Each script also self-bootstraps `sys.path` from `__file__`, which is what
+# lets all of these keep working from a plain clone with no install:
+#   python ocr/scripts/note_to_markdown.py ...
+#   (cd ocr && python -m scripts.note_to_markdown ...)
+#   ocr-note-to-markdown ...        # after pip install -e ./ocr
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["dots_mocr*", "scripts*"]
+exclude = ["docs*", "bin*", "tests*"]
+
+[tool.setuptools.package-data]
+"*" = ["README.md", "requirements.txt"]
